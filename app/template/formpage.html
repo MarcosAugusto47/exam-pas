@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Exam PAS</title>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
+    <style>
+      html, body {
+      min-height: 100%;
+      }
+      body, div, form, input, select, p { 
+      padding: 0;
+      margin: 0;
+      outline: none;
+      font-family: Roboto, Arial, sans-serif;
+      font-size: 16px;
+      color: #eee;
+      }
+      body {
+      background: url("/uploads/media/default/0001/01/b5edc1bad4dc8c20291c8394527cb2c5b43ee13c.jpeg") no-repeat center;
+      background-size: cover;
+      }
+      h1, h2 {
+      text-transform: uppercase;
+      font-weight: 400;
+      }
+      h2 {
+      margin: 0 0 0 8px;
+      }
+      .main-block {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: normal;
+      height: auto;
+      padding: 25px;
+      background: rgba(0, 0, 0, 0.5);
+      }
+      .left-part, form {
+      padding: 25px;
+      }
+      .left-part {
+      text-align: center;
+      }
+      .fa-graduation-cap {
+      font-size: 72px;
+      }
+      form {
+      background: rgba(0, 0, 0, 0.7);
+      overflow-y: auto;
+      }
+      .title {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      }
+      .info {
+      display: flex;
+      flex-direction: column;
+      }
+      input, select {
+      padding: 5px;
+      margin-bottom: 30px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid #eee;
+      }
+      input::placeholder {
+      color: #eee;
+      }
+      option:focus {
+      border: none;
+      }
+      option {
+      background: black; 
+      border: none;
+      }
+      .checkbox input {
+      margin: 0 10px 0 0;
+      vertical-align: middle;
+      }
+      .checkbox a {
+      color: #26a9e0;
+      }
+      .checkbox a:hover {
+      color: #85d6de;
+      }
+      .btn-item, button {
+      padding: 10px 5px;
+      margin-top: 20px;
+      border-radius: 5px; 
+      border: none;
+      background: #26a9e0; 
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 400;
+      color: #fff;
+      }
+      .btn-item {
+      display: inline-block;
+      margin: 20px 5px 0;
+      }
+      button {
+      width: 100%;
+      }
+      button:hover, .btn-item:hover {
+      background: #85d6de;
+      }
+      @media (min-width: 568px) {
+      html, body {
+      height: 100%;
+      }
+      .main-block {
+      flex-direction: row;
+      height: calc(100% - 50px);
+      }
+      .left-part, form {
+      flex: 1;
+      height: auto;
+      }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main-block">
+      <div class="left-part">
+        <i class="fas fa-graduation-cap"></i>
+        <h1>Exam PAS</h1>
+        <p>Digite suas informações para descobrir a probabilidade de aprovação.</p>
+        <div class="btn-group">
+          <a class="btn-item" href="https://github.com/login">Repositório do projeto</a>
+          <!-- <a class="btn-item" href="https://www.w3docs.com/quiz/#">Select Quiz</a> -->
+        </div>
+      </div>
+      <form action="/result">
+        <div class="title">
+          <i class="fas fa-pencil-alt"></i> 
+          <h2>Formulário para preenchimento</h2>
+        </div>
+        <div class="info">
+          <input class="fname" type="number" step="any" id="escore_bruto_p1_etapa1" name="escore_bruto_p1_etapa1" required placeholder="Escore Bruto Prova 1 Etapa 1">
+          <input type="number" step="any" id="escore_bruto_p2_etapa1" name="escore_bruto_p2_etapa1" required placeholder="Escore Bruto Prova 2 Etapa 1">
+          <input type="number" step="any" id="escore_bruto_p1_etapa2" name="escore_bruto_p1_etapa2" required placeholder="Escore Bruto Prova 1 Etapa 2">
+          <input type="number" step="any" id="escore_bruto_p2_etapa2" name="escore_bruto_p2_etapa2" required placeholder="Escore Bruto Prova 2 Etapa 2">
+          <input type="number" step="any" id="escore_bruto_p1_etapa3" name="escore_bruto_p1_etapa3" required placeholder="Escore Bruto Prova 1 Etapa 3">
+          <input type="number" step="any" id="escore_bruto_p2_etapa3" name="escore_bruto_p2_etapa3" required placeholder="Escore Bruto Prova 2 Etapa 3">
+          <label for="cotas_negros_flag">Cotas de Negros</label>
+          <select id="cotas_negros_flag" name="cotas_negros_flag">
+            <option value="0">Não</option>
+            <option value="1">Sim</option>
+          </select>
+          <label for="publicas1_flag">Públicas 1</label>
+          <select id="publicas1_flag" name="publicas1_flag">
+            <option value="0">Não</option>
+            <option value="1">Sim</option>
+          </select>
+          <label for="publicas2_flag">Públicas 2</label>
+          <select id="publicas2_flag" name="publicas2_flag">
+            <option value="0">Não</option>
+            <option value="1">Sim</option>
+          </select>
+          <label for="publicas3_flag">Públicas 3</label>
+          <select id="publicas3_flag" name="publicas3_flag">
+            <option value="0">Não</option>
+            <option value="1">Sim</option>
+          </select>
+          <label for="publicas4_flag">Públicas 4</label>
+          <select id="publicas4_flag" name="publicas4_flag">
+            <option value="0">Não</option>
+            <option value="1">Sim</option>
+          </select>
+          <label for="publicas5_flag">Públicas 5</label>
+          <select id="publicas5_flag" name="publicas5_flag">
+            <option value="0">Não</option>
+            <option value="1">Sim</option>
+          </select>
+          <label for="publicas6_flag">Públicas 6</label>
+          <select id="publicas6_flag" name="publicas6_flag">
+            <option value="0">Não</option>
+            <option value="1">Sim</option>
+          </select>
+          <label for="publicas7_flag">Públicas 7</label>
+          <select id="publicas7_flag" name="publicas7_flag">
+            <option value="0">Não</option>
+            <option value="1">Sim</option>
+          </select>
+          <label for="publicas8_flag">Públicas 8</label>
+          <select id="publicas8_flag" name="publicas8_flag">
+            <option value="0">Não</option>
+            <option value="1">Sim</option>
+          </select>
+          <label for="course">Selecione o Curso desejado</label>
+          <select id="course" name="course">
+            <option value="course-type" selected>Course type*</option>
+            {% for course in data.get('course_names') %}
+              <option value="{{ course }}">{{ course }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit">Enviar</button>
+      </form>
+    </div>
+  </body>
+</html>
