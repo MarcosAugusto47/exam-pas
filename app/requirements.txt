@@ -17,3 +17,4 @@ scikit-learn==1.2.2
 #tzdata==2023.3
 #Werkzeug==2.3.6
 xgboost==1.7.1
+smart-open==6.3.0

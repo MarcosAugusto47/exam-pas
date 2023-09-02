@@ -1,9 +1,10 @@
 import pandas as pd
-from pandas.api.types import CategoricalDtype
+#from pandas.api.types import CategoricalDtype
 import pickle
-import config
+#import config
 
 import sys
+import smart_open
 sys.path.append("../pipelines/")
 from models.config import FEATURES as MODEL_FEATURES
 from features.build_features import add_stats_features, add_pseudo_argumento_final
@@ -11,6 +12,10 @@ from features.build_features import add_stats_features, add_pseudo_argumento_fin
 
 with open('models/xgboost_categorical_not_calibrated.pickle', 'rb') as f:
     model = pickle.load(f)
+
+
+with smart_open.open("encodings/encoding_category.pickle", "rb") as f:
+    cat_type = pickle.load(f)
 
 
 approved_stats = pd.read_parquet('../data/interim/approved_stats_convocation_2019_2021.parquet')
@@ -37,7 +42,7 @@ def preprocess_input_features2(
     new_sample = add_pseudo_argumento_final(new_sample)
     new_sample = add_stats_features(new_sample, approved_stats)
 
-    cat_type = CategoricalDtype(categories=config.COURSE_NAMES)
+    #cat_type = CategoricalDtype(categories=config.COURSE_NAMES)
     new_sample.course = new_sample.course.astype(cat_type)
     new_sample = new_sample.reindex(columns=model_features)
 

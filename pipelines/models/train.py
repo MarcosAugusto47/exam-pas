@@ -1,6 +1,5 @@
 import pandas as pd
-from pandas.api.types import CategoricalDtype
-
+import smart_open
 import config
 
 from sklearn.model_selection import train_test_split
@@ -15,7 +14,8 @@ df = pd.read_parquet('../../data/processed/scores_approvals_convocation_2020_202
 df2 = pd.read_parquet('../../data/processed/scores_approvals_convocation_2019_2021.parquet')
 
 # Converting course feature according to pre defined categories
-cat_type = CategoricalDtype(categories=config.COURSE_NAMES)
+with smart_open.open("encoding_category.pickle", "rb") as f:
+    cat_type = pickle.load(f)
 df['course'] = df['course'].astype(cat_type)
 df2['course'] = df2['course'].astype(cat_type)
 
@@ -51,5 +51,5 @@ y_pred = model.predict(X_test)
 # Model Accuracy, how often is the classifier correct?
 print(classification_report(y_test, y_pred))
 
-#with open('../../models/xgboost_categorical_not_calibrated.pickle','wb') as f:
-#    pickle.dump(model, f)
+with open('../../models/xgboost_categorical_not_calibrated.pickle','wb') as f:
+    pickle.dump(model, f)
