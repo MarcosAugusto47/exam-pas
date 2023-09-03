@@ -7,7 +7,8 @@ import config
 from flask_cors import CORS
 import sys
 sys.path.append('../pipelines/')
-from models.config import FEATURES, COURSE_NAMES
+from etl.config import COURSE_NAMES
+from models.config import FEATURES
 
 app = Flask(__name__, template_folder='template', static_folder='template/assets')
 CORS(app)
