@@ -5,7 +5,7 @@ import pickle
 
 import sys
 import smart_open
-sys.path.append("../pipelines/")
+sys.path.append("pipelines/")
 from models.config import FEATURES as MODEL_FEATURES
 from features.build_features import add_stats_features, add_pseudo_argumento_final
 
@@ -14,11 +14,11 @@ with open('models/xgboost_categorical_not_calibrated.pickle', 'rb') as f:
     model = pickle.load(f)
 
 
-with smart_open.open("encodings/encoding_category.pickle", "rb") as f:
+with smart_open.open("app/encodings/encoding_category.pickle", "rb") as f:
     cat_type = pickle.load(f)
 
 
-approved_stats = pd.read_parquet('../data/interim/approved_stats_convocation_2019_2021.parquet')
+approved_stats = pd.read_parquet('data/interim/approved_stats_convocation_2019_2021.parquet')
 
 def preprocess_input_features2(
         user_features: dict,
