@@ -1,0 +1,27 @@
+<!-- templates/index.html -->
+
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="hero is-fullheight">
+    <div class="hero-body">
+      <div class="container has-text-centered">
+        <h1 class="title is-size-1">
+          Exam PAS Approval Predictions
+        </h1>
+        <p class="subtitle is-size-4">
+          Empowering Students with Machine Learning Insights
+        </p>
+        <figure class="image" style="width: 256px; height: 256px; margin: 0 auto;">
+          <img src="{{ url_for('static', filename='PAS.png') }}" alt="Machine Learning Image">
+        </figure>
+        <p class="is-size-5">
+          Unlock the power of data-driven decision-making in your educational journey. Our machine learning solution provides students with personalized probability predictions of exam approval.
+        </p>
+        <button class="button is-primary is-large" id="submitBtn">
+          Try It Now
+        </button>
+      </div>
+    </div>
+  </section>
+{% endblock %}
