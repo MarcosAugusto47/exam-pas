@@ -1,5 +1,6 @@
 import os
 import json
+import boto3
 import pandas as pd
 import stripe
 import uuid
@@ -15,18 +16,25 @@ from models.config import FEATURES
 
 #app = Flask(__name__, template_folder='template', static_folder='template/assets')
 app = Flask(__name__)
+
 # Set a secret key for the application
 app.secret_key = '_5#y2L"F4Q8z\n\xec]/'
 CORS(app)
 
 USER_LINKS_FILE = "user_links.json"
+AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
+AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
+BUCKET_NAME = 'exam-pas'
 
-# Load existing user links from the JSON file
-try:
-    with open(f"app/{USER_LINKS_FILE}", "r") as file:
-        user_links = json.load(file)
-except FileNotFoundError:
-    user_links = {}
+STRIPE_SECRET_KEY = os.environ["STRIPE_SECRET_KEY"]
+print(f"STRIPE_SECRET_KEY: {STRIPE_SECRET_KEY}")
+s3 = boto3.client(
+    's3',
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+)
+response = s3.get_object(Bucket=BUCKET_NAME, Key=USER_LINKS_FILE)
+user_links = json.loads(response['Body'].read().decode('utf-8'))
 
 print(f"user_links: {user_links}")
 
@@ -66,6 +74,10 @@ def save_user_links_to_file():
     # Save user_links to the JSON file
     with open(f"app/{USER_LINKS_FILE}", "w") as file:
         json.dump(user_links, file)
+        
+    # Upload the local JSON file to S3
+    with open(f"app/{USER_LINKS_FILE}", 'rb') as file:
+        s3.put_object(Bucket=BUCKET_NAME, Key=USER_LINKS_FILE, Body=file)
 
 
 @app.route('/result')
@@ -121,11 +133,6 @@ def result():
 #     return result
 
 
-@app.route("/hello")
-def hello_world():
-    return jsonify("hello, world!")
-
-
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -144,7 +151,8 @@ def get_publishable_key():
 
 @app.route("/create-checkout-session")
 def create_checkout_session():
-    domain_url = "http://127.0.0.1:5000/"
+
+    domain_url = os.environ.get("DOMAIN_URL", "http://127.0.0.1:5000/")
     stripe.api_key = stripe_keys["secret_key"]
 
     try:
@@ -264,3 +272,7 @@ def confirmation_page(user_identifier):
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True, host='0.0.0.0', port=port)
+
+
+
+
