@@ -4,7 +4,7 @@ import boto3
 import pandas as pd
 import stripe
 import uuid
-from flask import Flask, jsonify, request, render_template, session
+from flask import Flask, jsonify, request, render_template, session, redirect, url_for
 from utils import predict_approval
 import datetime
 import config
@@ -18,7 +18,7 @@ from models.config import FEATURES
 app = Flask(__name__)
 
 # Set a secret key for the application
-app.secret_key = '_5#y2L"F4Q8z\n\xec]/'
+app.secret_key = os.environ["FLASK_SECRET_KEY"]
 CORS(app)
 
 USER_LINKS_FILE = "user_links.json"
@@ -27,7 +27,7 @@ AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
 BUCKET_NAME = 'exam-pas'
 
 STRIPE_SECRET_KEY = os.environ["STRIPE_SECRET_KEY"]
-print(f"STRIPE_SECRET_KEY: {STRIPE_SECRET_KEY}")
+
 s3 = boto3.client(
     's3',
     aws_access_key_id=AWS_ACCESS_KEY_ID,
@@ -35,8 +35,6 @@ s3 = boto3.client(
 )
 response = s3.get_object(Bucket=BUCKET_NAME, Key=USER_LINKS_FILE)
 user_links = json.loads(response['Body'].read().decode('utf-8'))
-
-print(f"user_links: {user_links}")
 
 stripe_keys = {
     "secret_key": os.environ["STRIPE_SECRET_KEY"],
@@ -79,9 +77,11 @@ def save_user_links_to_file():
     with open(f"app/{USER_LINKS_FILE}", 'rb') as file:
         s3.put_object(Bucket=BUCKET_NAME, Key=USER_LINKS_FILE, Body=file)
 
-
-@app.route('/result')
-def result():
+# This route handles the form submission and then redirects to /result
+@app.route('/submit')
+def submit_form():
+    # Your processing logic for the form data goes here
+    # For example, you can retrieve form data using request.form.get('<input_name>')
     data = {
         'escore_bruto_p1_etapa1': float(request.args.get('escore_bruto_p1_etapa1')),
         'escore_bruto_p2_etapa1': float(request.args.get('escore_bruto_p2_etapa1')),
@@ -103,15 +103,42 @@ def result():
 
     approval_prediction = predict_approval(data)
 
+    # Store the data in the session
+    session['approval_prediction'] = approval_prediction
+
+    # After processing, redirect to /result without exposing query parameters
+    return redirect(url_for('result'))
+
+
+@app.route('/result')
+def result():
+    # data = {
+    #     'escore_bruto_p1_etapa1': float(request.args.get('escore_bruto_p1_etapa1')),
+    #     'escore_bruto_p2_etapa1': float(request.args.get('escore_bruto_p2_etapa1')),
+    #     'escore_bruto_p1_etapa2': float(request.args.get('escore_bruto_p1_etapa2')),
+    #     'escore_bruto_p2_etapa2': float(request.args.get('escore_bruto_p2_etapa2')),
+    #     'escore_bruto_p1_etapa3': float(request.args.get('escore_bruto_p1_etapa3')),
+    #     'escore_bruto_p2_etapa3': float(request.args.get('escore_bruto_p2_etapa3')),
+    #     'cotas_negros_flag': int(request.args.get('cotas_negros_flag')),
+    #     'publicas1_flag': int(request.args.get('publicas1_flag')),
+    #     'publicas2_flag': int(request.args.get('publicas2_flag')),
+    #     'publicas3_flag': int(request.args.get('publicas3_flag')),
+    #     'publicas4_flag': int(request.args.get('publicas4_flag')),
+    #     'publicas5_flag': int(request.args.get('publicas5_flag')),
+    #     'publicas6_flag': int(request.args.get('publicas6_flag')),
+    #     'publicas7_flag': int(request.args.get('publicas7_flag')),
+    #     'publicas8_flag': int(request.args.get('publicas8_flag')),
+    #     'course': request.args.get('course'),
+    # }
+
+    # approval_prediction = predict_approval(data)
+
     result_data = {
-        'approval_prediction': approval_prediction
+        'approval_prediction': session['approval_prediction']
     }
     
     # Access the data from the session
     received_data = session.get('data', {})
-
-    print(f"received_data: {received_data}")
-    print(f"request.args: {request.args}")
 
     return render_template('resultpage.html', data=result_data, received_data=received_data)
 
@@ -243,15 +270,11 @@ def confirmation_page(user_identifier):
     
     # user_identifier comes from parameter function
     print(f"user_identifier: {user_identifier}")
-
-
-
     print(f"user_links: {user_links}")
     
     
     # Ensure the user_id is valid (you might want to add more checks)
     user_identifiers = [user_links[key]["user_identifier"] for key in user_links]
-    print(user_identifiers)
     if user_identifier not in user_identifiers:
         return "Invalid user ID or payment not registered", 404
 
