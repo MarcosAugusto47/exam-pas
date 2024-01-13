@@ -74,7 +74,7 @@ def predict_approval(new_data: pd.DataFrame) -> float:
     predictions = model.predict_proba(new_data)
     approval_prob = predictions[0][1]
 
-    return round(float(approval_prob), ndigits=3)
+    return round(float(approval_prob)*100, ndigits=1)
 
 
 if __name__=="__main__":

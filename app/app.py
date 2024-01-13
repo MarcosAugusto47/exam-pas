@@ -33,14 +33,17 @@ s3 = boto3.client(
     aws_access_key_id=AWS_ACCESS_KEY_ID,
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
 )
-response = s3.get_object(Bucket=BUCKET_NAME, Key=USER_LINKS_FILE)
-user_links = json.loads(response['Body'].read().decode('utf-8'))
 
 stripe_keys = {
     "secret_key": os.environ["STRIPE_SECRET_KEY"],
     "publishable_key": os.environ["STRIPE_PUBLISHABLE_KEY"],
     "endpoint_secret": os.environ["STRIPE_ENDPOINT_SECRET"], # new
 }
+
+#response = s3.get_object(Bucket=BUCKET_NAME, Key=USER_LINKS_FILE)
+#user_links = json.loads(response['Body'].read().decode('utf-8'))
+
+#print(f"user_links:\n{user_links}")
 
 stripe.api_key = stripe_keys["secret_key"]
 
@@ -68,14 +71,20 @@ stripe.api_key = stripe_keys["secret_key"]
 #     return render_template('formpage.html', data=data)
 
 
-def save_user_links_to_file():
-    # Save user_links to the JSON file
-    with open(f"app/{USER_LINKS_FILE}", "w") as file:
-        json.dump(user_links, file)
-        
-    # Upload the local JSON file to S3
-    with open(f"app/{USER_LINKS_FILE}", 'rb') as file:
-        s3.put_object(Bucket=BUCKET_NAME, Key=USER_LINKS_FILE, Body=file)
+# @app.route('/increment', methods=['POST'])
+# def increment():
+#     counterDisplay = session["counterDisplay"]
+#     counterDisplay += 1
+#     return str(counterDisplay)
+
+def save_user_links_to_file(user_links):
+    # Convert user_links to JSON data
+    json_data = json.dumps(user_links, indent=2).encode('utf-8')
+    print(f"json_data:\n{json_data}")
+
+    # Upload JSON data to S3
+    s3.put_object(Bucket=BUCKET_NAME, Key=USER_LINKS_FILE, Body=json_data)
+
 
 # This route handles the form submission and then redirects to /result
 @app.route('/submit')
@@ -105,6 +114,18 @@ def submit_form():
 
     # Store the data in the session
     session['approval_prediction'] = approval_prediction
+
+    # Apply incrementing here
+    counterDisplay = session["counterDisplay"] + 1
+
+    user_identifier = session['data']
+    response = s3.get_object(Bucket=BUCKET_NAME, Key=USER_LINKS_FILE)
+    user_links = json.loads(response['Body'].read().decode('utf-8'))
+    email, user_content = get_user_dict(user_links, user_identifier)
+    user_links[email]['click_counter'] = counterDisplay
+
+    # Store the link in the JSON file
+    save_user_links_to_file(user_links)
 
     # After processing, redirect to /result without exposing query parameters
     return redirect(url_for('result'))
@@ -139,7 +160,7 @@ def result():
     
     # Access the data from the session
     received_data = session.get('data', {})
-
+    
     return render_template('resultpage.html', data=result_data, received_data=received_data)
 
 # @app.post('/predict') 
@@ -226,6 +247,9 @@ def cancelled():
 
 @app.route("/webhook", methods=["POST"])
 def stripe_webhook():
+    """
+    Do not read s3 files here!
+    """
     payload = request.get_data(as_text=True)
     sig_header = request.headers.get("Stripe-Signature")
 
@@ -242,37 +266,67 @@ def stripe_webhook():
         return "Invalid signature", 400
 
     # Handle the checkout.session.completed event
+    print(f"event['type']: {event['type']}")
     if event["type"] == "checkout.session.completed":
         print("Payment was successful.")
-        print(f"event:\n{event}")
-
+        
         # TODO: run some custom code here
         event_id = event["id"]
         checkout_session_id = event["data"]["object"]["id"]
         email = event["data"]["object"]["customer_details"]["email"]
-       
-        # Store the link in the database
+        print(f"email: {email}")
+        
+        try:
+            # Existing code...
+            print("Inside of try!")
+            response = s3.get_object(Bucket=BUCKET_NAME, Key=USER_LINKS_FILE)
+            print(f"response:\n{response}")
+            user_links = json.loads(response['Body'].read().decode('utf-8'))
+            print(f"user_links inside webhook:\n{user_links}")
+            print("Final of try!")
+
+        except s3.exceptions.NoSuchKey as e:
+            # Handle the case when the S3 object does not exist
+            print(f"S3 object not found: {e}")
+        except Exception as e:
+            # Handle other exceptions
+            print(f"An error occurred: {e}")
+                # Store the link in the database
+        #response = s3.get_object(Bucket=BUCKET_NAME, Key=USER_LINKS_FILE)
+        #object_body = response['Body'].read().decode('utf-8')
+        #print(f" object_body:\n{ object_body}")
+        #user_links = json.loads(response['Body'].read().decode('utf-8'))
         user_links[email] = {
             "event_id": event_id,
             "checkout_session_id": checkout_session_id,
-            "user_identifier": str(uuid.uuid4())
+            "user_identifier": str(uuid.uuid4()),
+            "click_counter": 0,
         }
+        
         # Store the link in the JSON file
-        save_user_links_to_file()
+        save_user_links_to_file(user_links)
 
     return "Success", 200
 
+def get_user_dict(user_links, user_identifier_input):
+        for a, b in user_links.items():
+            if b['user_identifier'] == user_identifier_input:
+                return a, b
+        
+        return "User not found"
 
 #@app.route("/confirmation/<event_id>/<email>")
 @app.route("/confirmation/<user_identifier>")
 def confirmation_page(user_identifier):
 #def confirmation_page(event_id, email):
     
+    response = s3.get_object(Bucket=BUCKET_NAME, Key=USER_LINKS_FILE)
+    user_links = json.loads(response['Body'].read().decode('utf-8'))
+    
     # user_identifier comes from parameter function
-    print(f"user_identifier: {user_identifier}")
-    print(f"user_links: {user_links}")
-    
-    
+    #print(f"user_identifier: {user_identifier}")
+    #print(f"user_links: {user_links}")
+        
     # Ensure the user_id is valid (you might want to add more checks)
     user_identifiers = [user_links[key]["user_identifier"] for key in user_links]
     if user_identifier not in user_identifiers:
@@ -285,17 +339,21 @@ def confirmation_page(user_identifier):
 
     # Store the data in the session
     session['data'] = user_identifier
-    
+
+    _, user_content = get_user_dict(user_links, user_identifier)
+    counterDisplay = user_content['click_counter']
+    # Store the data in the session
+    session['counterDisplay'] = counterDisplay
+        
+    if counterDisplay > 5:
+        return render_template("click_count_warning.html")
+
     # Perform any additional actions or render a confirmation page
     # In this example, we'll just render a simple template
     #return render_template("confirmation_page.html", email=email, event_id=event_id, unique_link=unique_link)
-    return render_template("formpage.html", email=user_identifier, data=data)
+    return render_template("formpage.html", email=user_identifier, data=data, counterDisplay=counterDisplay)
 
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True, host='0.0.0.0', port=port)
-
-
-
-

@@ -176,6 +176,8 @@
       <div class="btn-group">
         <a class="btn-item" href="https://docs.aws.amazon.com/sagemaker/latest/dg/xgboost-HowItWorks.html">How XGBoost Works?</a>
       </div>
+      <!-- Counter display -->
+      <p>Click Count: <span id="counterDisplay"> {{ counterDisplay }}</span></p>
     </div>
     <form action="/submit">
       <div class="title">
@@ -234,9 +236,9 @@
             <option value="0">Não</option>
             <option value="1">Sim</option>
           </select>
-          <label for="course">Curso Desejado</label>
+          <label for="course">Curso</label>
           <select id="course" name="course">
-            <option value="course-type" selected>Course type*</option>
+            <option value="course-type" selected>Curso*</option>
             {% for course in data.get('course_names') %}
               <option value="{{ course }}">{{ course }}</option>
             {% endfor %}
