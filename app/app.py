@@ -47,6 +47,11 @@ stripe_keys = {
 
 stripe.api_key = stripe_keys["secret_key"]
 
+with open("data/ui/approved_stats.json", "r") as file:
+    approved_stats = json.load(file)
+
+#print(approved_stats)
+
 #df_scores = pd.read_parquet('../data/processed/scores_approvals_convocation_2020_2022.parquet')
 #df_scores = df_scores[config.RESULTS_INFO]
 
@@ -110,15 +115,19 @@ def submit_form():
         'course': request.args.get('course'),
     }
 
+    course = request.args.get('course')
+    course_stats = approved_stats[course]
     approval_prediction = predict_approval(data)
 
     # Store the data in the session
+    session['course'] = course
+    session['course_stats'] = course_stats
     session['approval_prediction'] = approval_prediction
 
     # Apply incrementing here
     counterDisplay = session["counterDisplay"] + 1
-
     user_identifier = session['data']
+    
     response = s3.get_object(Bucket=BUCKET_NAME, Key=USER_LINKS_FILE)
     user_links = json.loads(response['Body'].read().decode('utf-8'))
     email, user_content = get_user_dict(user_links, user_identifier)
@@ -160,8 +169,24 @@ def result():
     
     # Access the data from the session
     received_data = session.get('data', {})
+
+    print(f"received_data: {received_data}")
+
+    course = session['course']
+
+    original_course_stats = session['course_stats']
+
+    course_stats = {}
+
+    for key, value in original_course_stats.items():
+        parts = key.split('_')
+        try:
+            new_key = f"Escore Bruto Parte {parts[2][-1]} Etapa {parts[3][-1]}"
+        except IndexError:
+            new_key = 'Argumento Final'
+        course_stats[new_key] = value
     
-    return render_template('resultpage.html', data=result_data, received_data=received_data)
+    return render_template('resultpage.html', data=result_data, received_data=received_data, course_stats=course_stats, course=course)
 
 # @app.post('/predict') 
 # def predict():

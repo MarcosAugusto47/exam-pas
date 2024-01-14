@@ -1,7 +1,7 @@
 import config
 import pandas as pd
 import re 
-
+import json
 
 def add_cotas_flags(df: pd.DataFrame, cotas_columns: list) -> pd.DataFrame:
     """Adds flag column to each type of affirmative quota."""        
@@ -50,15 +50,15 @@ def add_pseudo_argumento_final(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def get_approved_stats(df: pd.DataFrame) -> pd.DataFrame:
-    """Gets statistics of scores of approved students grouped by course.
+def get_approved_stats_for_PAF(df: pd.DataFrame) -> pd.DataFrame:
+    """Gets statistics of PAF of approved students groupedby course.
     
     Computes mean, median, min, max, std statistics of approved students of
     the previous subprogram grouped by course. This will be used to create
-    features for the students of the curren subprogram.
+    features for the students of the currenT subprogram.
 
     Args:
-        df: dataframe of approved students with their scores.
+        df: dataframe of approved students with their scores and PAF.
 
     Returns:
         A pandas DataFrame with summary statistics for each course.
@@ -101,6 +101,47 @@ def add_stats_features(
     return df
 
 
+def get_approved_stats_for_stages(df: pd.DataFrame) -> pd.DataFrame:
+    """ Gets statistics of scores for parts 1 and 2 for all stages grouped by course.
+
+    Computes mean, median, min, max, std statistics of approved students not eligible for
+    affirmative actin by course. This will be used to create a .json file that will feed
+    the UI.
+    
+    Args:
+        df: dataframe with all students and scores.
+
+    Returns:
+        A pandas DataFrame with summary statistics for each course.
+    """
+    
+    NUMERICAL_FEATURES_FOR_STATS = [
+        x for x in config.NUMERICAL_FEATURES if 'redacao' not in x
+    ]
+    
+    approved_mask = df.label==1
+    not_affirmative_action = df.cotista == 0 
+    df = df[(approved_mask)&(not_affirmative_action)]
+    df = df[['course'] + NUMERICAL_FEATURES_FOR_STATS]
+    grouped_data = df.groupby('course').agg([
+        'min', 'max', 'median', 'mean'
+    ]).reset_index().round(1)
+   
+    # Create a nested dictionary structure
+    result_dict = {}
+    for index, row in grouped_data.iterrows():
+        course = row['course'][0]
+        result_dict[course] = {}
+        for column in NUMERICAL_FEATURES_FOR_STATS:
+            result_dict[course][column] = {
+                'min': row[(column, 'min')],
+                'max': row[(column, 'max')],
+                'median': row[(column, 'median')],
+                'mean': row[(column, 'mean')]
+            }
+    return result_dict
+
+
 def build_features_wrapper(
     scores_file_path: str,
     approvals_file_path: str,
@@ -123,8 +164,15 @@ def main():
     approvals_file_path = '../../data/interim/approvals_convocation_2019_2021.parquet'
     
     df = build_features_wrapper(scores_file_path, approvals_file_path)
-    approved_stats = get_approved_stats(df)
+    
+    approved_stats_for_stages = get_approved_stats_for_stages(df)
+    
+    with open('../../data/ui/approved_stats.json', 'w') as json_file:
+        json.dump(approved_stats_for_stages, json_file, indent=2)
+
+    approved_stats = get_approved_stats_for_PAF(df)
     approved_stats.to_parquet('../../data/interim/approved_stats_convocation_2019_2021.parquet')
+    
     df = add_stats_features(df, approved_stats)
     df.to_parquet('../../data/processed/scores_approvals_convocation_2019_2021.parquet')
 
