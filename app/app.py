@@ -47,7 +47,7 @@ stripe_keys = {
 
 stripe.api_key = stripe_keys["secret_key"]
 
-with open("data/ui/approved_stats.json", "r") as file:
+with open("data/ui/approved_stats_2020_2022.json", "r") as file:
     approved_stats = json.load(file)
 
 #print(approved_stats)

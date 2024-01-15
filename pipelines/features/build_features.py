@@ -167,7 +167,7 @@ def main():
     
     approved_stats_for_stages = get_approved_stats_for_stages(df)
     
-    with open('../../data/ui/approved_stats.json', 'w') as json_file:
+    with open('../../data/ui/approved_stats_2019_2021.json', 'w') as json_file:
         json.dump(approved_stats_for_stages, json_file, indent=2)
 
     approved_stats = get_approved_stats_for_PAF(df)
@@ -182,6 +182,12 @@ def main():
     approvals_file_path = '../../data/interim/approvals_convocation_2020_2022.parquet'
     
     df = build_features_wrapper(scores_file_path, approvals_file_path)
+
+    approved_stats_for_stages = get_approved_stats_for_stages(df)
+   
+    with open('../../data/ui/approved_stats_2020_2022.json', 'w') as json_file:
+        json.dump(approved_stats_for_stages, json_file, indent=2)
+
     approved_stats = pd.read_parquet('../../data/interim/approved_stats_convocation_2019_2021.parquet')          
     df = add_stats_features(df, approved_stats)
     df.to_parquet('../../data/processed/scores_approvals_convocation_2020_2022.parquet')
